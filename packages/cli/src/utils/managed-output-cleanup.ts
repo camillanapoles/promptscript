@@ -202,8 +202,37 @@ try {
   } finally {
     fs.closeSync(descriptor);
   }
-  fs.linkSync(temporary, name);
-  fs.unlinkSync(temporary);
+  const preferRename = process.env.PROMPTSCRIPT_CREATE_STRATEGY === 'rename';
+  if (preferRename) {
+    if (fs.existsSync(name)) {
+      const exists = new Error('target already exists');
+      exists.code = 'EEXIST';
+      throw exists;
+    }
+    fs.renameSync(temporary, name);
+  } else {
+    try {
+      fs.linkSync(temporary, name);
+      fs.unlinkSync(temporary);
+    } catch (linkError) {
+      if (
+        linkError &&
+        (linkError.code === 'EACCES' || linkError.code === 'EPERM' || linkError.code === 'EXDEV')
+      ) {
+        // Filesystems such as Android app storage deny hardlinks outright.
+        // rename within the same directory is still atomic; re-check the
+        // target to keep the exclusive-create guarantee link() provided.
+        if (fs.existsSync(name)) {
+          const exists = new Error('target already exists');
+          exists.code = 'EEXIST';
+          throw exists;
+        }
+        fs.renameSync(temporary, name);
+      } else {
+        throw linkError;
+      }
+    }
+  }
   temporaryCreated = false;
   process.stdout.write('created');
 } catch (error) {
