@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Syncs root SKILL.md to the copies that feed the compiler.
+# Syncs the root promptscript skill (SKILL.md + references/) to the copies
+# that feed the compiler.
 #
 # Target skill directories such as .claude/skills/ are compiler output: they are
 # written by `prs compile` through includePromptScriptSkill and carry a
@@ -13,30 +14,35 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SOURCE="$ROOT/skills/promptscript/SKILL.md"
+SOURCE="$ROOT/skills/promptscript"
 
 DESTINATIONS=(
-  "$ROOT/packages/cli/skills/promptscript/SKILL.md"
-  "$ROOT/.promptscript/skills/promptscript/SKILL.md"
+  "$ROOT/packages/cli/skills/promptscript"
+  "$ROOT/.promptscript/skills/promptscript"
 )
 
-if [ ! -f "$SOURCE" ]; then
-  echo "ERROR: $SOURCE not found" >&2
+if [ ! -f "$SOURCE/SKILL.md" ]; then
+  echo "ERROR: $SOURCE/SKILL.md not found" >&2
   exit 1
 fi
 
-SOURCE_HASH=$(shasum -a 256 "$SOURCE" | cut -d' ' -f1)
+# Hash manifest of the skill directory: relative path + content hash per file.
+skill_manifest() {
+  local dir="$1"
+  (cd "$dir" && find . -type f | LC_ALL=C sort | while read -r f; do
+    printf '%s  %s\n' "$(shasum -a 256 "$f" | cut -d' ' -f1)" "${f#./}"
+  done)
+}
 
 if [ "${1:-}" = "--check" ]; then
   failed=0
   for dest in "${DESTINATIONS[@]}"; do
-    if [ ! -f "$dest" ]; then
+    if [ ! -f "$dest/SKILL.md" ]; then
       echo "MISSING: $dest" >&2
       failed=1
       continue
     fi
-    dest_hash=$(shasum -a 256 "$dest" | cut -d' ' -f1)
-    if [ "$SOURCE_HASH" != "$dest_hash" ]; then
+    if [ "$(skill_manifest "$SOURCE")" != "$(skill_manifest "$dest")" ]; then
       echo "OUT OF SYNC: $dest" >&2
       failed=1
     fi
@@ -45,12 +51,13 @@ if [ "${1:-}" = "--check" ]; then
     echo "Run './scripts/sync-skill.sh' to fix." >&2
     exit 1
   fi
-  echo "All SKILL.md copies in sync."
+  echo "All promptscript skill copies in sync."
   exit 0
 fi
 
 for dest in "${DESTINATIONS[@]}"; do
-  mkdir -p "$(dirname "$dest")"
-  cp "$SOURCE" "$dest"
+  mkdir -p "$dest"
+  rm -rf "$dest"
+  cp -R "$SOURCE" "$dest"
   echo "Synced: $dest"
 done
