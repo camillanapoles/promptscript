@@ -12,7 +12,7 @@ describe('createHookOutputSafely create strategy', () => {
   });
 
   afterEach(async () => {
-    delete process.env.PROMPTSCRIPT_CREATE_STRATEGY;
+    delete process.env['PROMPTSCRIPT_CREATE_STRATEGY'];
     await rm(dir, { recursive: true, force: true });
   });
 
@@ -24,7 +24,7 @@ describe('createHookOutputSafely create strategy', () => {
   });
 
   it('creates output via rename when PROMPTSCRIPT_CREATE_STRATEGY=rename', async () => {
-    process.env.PROMPTSCRIPT_CREATE_STRATEGY = 'rename';
+    process.env['PROMPTSCRIPT_CREATE_STRATEGY'] = 'rename';
     const target = join(dir, 'renamed.txt');
 
     await expect(createHookOutputSafely(target, dir, 'renamed', 0o644)).resolves.toBe(true);
@@ -32,7 +32,7 @@ describe('createHookOutputSafely create strategy', () => {
   });
 
   it('keeps exclusive-create semantics on the rename path', async () => {
-    process.env.PROMPTSCRIPT_CREATE_STRATEGY = 'rename';
+    process.env['PROMPTSCRIPT_CREATE_STRATEGY'] = 'rename';
     const target = join(dir, 'exclusive.txt');
 
     await expect(createHookOutputSafely(target, dir, 'first', 0o644)).resolves.toBe(true);
@@ -41,7 +41,7 @@ describe('createHookOutputSafely create strategy', () => {
   });
 
   it('leaves no temporary files behind after a successful rename', async () => {
-    process.env.PROMPTSCRIPT_CREATE_STRATEGY = 'rename';
+    process.env['PROMPTSCRIPT_CREATE_STRATEGY'] = 'rename';
     const target = join(dir, 'clean.txt');
 
     await expect(createHookOutputSafely(target, dir, 'payload', 0o644)).resolves.toBe(true);
