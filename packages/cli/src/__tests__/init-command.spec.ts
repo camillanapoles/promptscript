@@ -840,11 +840,10 @@ describe('commands/init', () => {
       const factoryFrontmatter = parseYaml(factoryFrontmatterMatch![1]!) as Record<string, unknown>;
       const claudeFrontmatter = parseYaml(claudeFrontmatterMatch![1]!) as Record<string, unknown>;
 
-      expect(Object.keys(factoryFrontmatter)).toEqual(['name', 'description', 'user-invocable']);
+      expect(Object.keys(factoryFrontmatter)).toEqual(['name', 'description']);
       expect(factoryFrontmatter).toEqual({
         name: 'promptscript',
         description: sourceFrontmatter['description'],
-        'user-invocable': true,
       });
       expect(sourceFrontmatter['license']).toBe('MIT');
       expect(sourceFrontmatter['allowed-tools']).toBeDefined();
