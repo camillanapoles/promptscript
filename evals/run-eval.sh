@@ -17,8 +17,8 @@ run_prs() {
   if [ -n "${PRS_CMD:-}" ]; then
     (cd "$WORK" && $PRS_CMD "$@")
   else
-    node --import @swc-node/register/esm-register \
-      "$ROOT/packages/cli/src/cli.ts" "$@" --cwd "$WORK"
+    (cd "$ROOT" && node --import @swc-node/register/esm-register \
+      ./packages/cli/src/cli.ts "$@" --cwd "$WORK")
   fi
 }
 
