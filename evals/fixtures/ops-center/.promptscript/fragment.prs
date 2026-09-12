@@ -1,0 +1,13 @@
+# Fragmento importável via @use
+@meta { id: "frag" syntax: "1.5.0" }
+
+@standards {
+  git: { format: "Conventional Commits" }
+  naming: ["kebab-case files"]
+}
+
+@knowledge {
+  """
+  Release checklist: run tests, update changelog, tag.
+  """
+}
