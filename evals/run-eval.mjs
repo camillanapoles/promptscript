@@ -4,10 +4,6 @@
 // Usage:
 //   node evals/run-eval.mjs                 # repo checkout (CI / dev)
 //   PRS_CMD="prs" node evals/run-eval.mjs   # alternative single command
-//
-// The default path resolves the swc loader via import.meta.resolve from this
-// module's location inside the repo (guaranteed to work), then runs the CLI
-// with the fixture temp dir as its working directory.
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -21,19 +17,30 @@ const failures = [];
 function check(label, condition) {
   if (!condition) failures.push(label);
 }
+
 try {
   cpSync(join(ROOT, 'evals/fixtures/ops-center'), WORK, { recursive: true });
 
   const prsCmd = process.env.PRS_CMD;
-  let loader;
 
   function runPrs(args) {
+    // Default path mirrors the repo's own package.json scripts (e.g.
+    // docs:validate): bare loader specifier with the repo as cwd — the exact
+    // combination CI already runs green. The fixture reaches the CLI through
+    // absolute paths (validate positional files) and --cwd (compile); the
+    // installed-CLI override runs with the fixture as cwd, where project
+    // discovery needs no flags.
     const result = prsCmd
       ? spawnSync(prsCmd, args, { cwd: WORK, shell: true, stdio: 'inherit' })
       : spawnSync(
           process.execPath,
-          ['--import', getLoader(), join(ROOT, 'packages/cli/src/cli.ts'), ...args],
-          { cwd: WORK, stdio: 'inherit' }
+          [
+            '--import',
+            '@swc-node/register/esm-register',
+            join(ROOT, 'packages/cli/src/cli.ts'),
+            ...args,
+          ],
+          { cwd: ROOT, stdio: 'inherit' }
         );
     if (result.error) throw result.error;
     if (result.status !== 0) {
@@ -41,15 +48,8 @@ try {
     }
   }
 
-  function getLoader() {
-    if (!loader) {
-      loader = import.meta.resolve('@swc-node/register/esm-register');
-    }
-    return loader;
-  }
-
-  runPrs(['validate', '--strict']);
-  runPrs(['compile']);
+  runPrs(['validate', '--strict', join(WORK, '.promptscript/project.prs')]);
+  runPrs(['compile', '--cwd', WORK]);
 
   const read = (file) => readFileSync(join(WORK, file), 'utf-8');
   const claude = read('CLAUDE.md');
