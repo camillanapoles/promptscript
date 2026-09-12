@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # End-to-end eval: compiles the ops-center fixture through the real CLI and
 # asserts the language semantics survive compilation.
 #
