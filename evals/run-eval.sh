@@ -9,15 +9,16 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # How to invoke the CLI. Default: the repo's own cli.ts through the swc
-# loader (works from any cwd — required, since the fixture runs in a temp
-# dir where `pnpm prs` cannot resolve a package.json). Override with a
-# single command (e.g. an installed prs binary path) via PRS_CMD.
+# loader, executed from the repo root (the bare loader specifier resolves
+# there) and pointed at the fixture with --cwd. Override with a single
+# command (e.g. an installed prs binary path) via PRS_CMD — it runs with
+# the fixture as its working directory.
 run_prs() {
   if [ -n "${PRS_CMD:-}" ]; then
-    $PRS_CMD "$@"
+    (cd "$WORK" && $PRS_CMD "$@")
   else
-    node --import "$ROOT/node_modules/@swc-node/register/esm-register" \
-      "$ROOT/packages/cli/src/cli.ts" "$@"
+    node --import @swc-node/register/esm-register \
+      "$ROOT/packages/cli/src/cli.ts" "$@" --cwd "$WORK"
   fi
 }
 
