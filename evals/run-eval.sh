@@ -9,16 +9,23 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # How to invoke the CLI. Default: the repo's own cli.ts through the swc
-# loader, executed from the repo root (the bare loader specifier resolves
-# there) and pointed at the fixture with --cwd. Override with a single
-# command (e.g. an installed prs binary path) via PRS_CMD — it runs with
-# the fixture as its working directory.
+# loader. The loader must be resolved to a real file URL from the repo root
+# (bare specifiers and node_modules paths do not resolve from the temp
+# fixture directory). Override with a single command (e.g. an installed prs
+# binary path) via PRS_CMD — it runs with the fixture as its working
+# directory.
+EVAL_LOADER="$(cd "$ROOT" && node --input-type=module -e \
+  "console.log(import.meta.resolve('@swc-node/register/esm-register'))")"
+if [ -z "$EVAL_LOADER" ]; then
+  echo "eval fail: could not resolve @swc-node/register/esm-register from $ROOT" >&2
+  exit 1
+fi
+
 run_prs() {
   if [ -n "${PRS_CMD:-}" ]; then
     (cd "$WORK" && $PRS_CMD "$@")
   else
-    (cd "$ROOT" && node --import @swc-node/register/esm-register \
-      ./packages/cli/src/cli.ts "$@" --cwd "$WORK")
+    (cd "$WORK" && node --import "$EVAL_LOADER" "$ROOT/packages/cli/src/cli.ts" "$@")
   fi
 }
 
