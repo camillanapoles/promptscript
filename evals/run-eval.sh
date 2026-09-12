@@ -12,19 +12,20 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # loader. The loader must be resolved to a real file URL from the repo root
 # (bare specifiers and node_modules paths do not resolve from the temp
 # fixture directory). Override with a single command (e.g. an installed prs
-# binary path) via PRS_CMD — it runs with the fixture as its working
-# directory.
-EVAL_LOADER="$(cd "$ROOT" && node --input-type=module -e \
-  "console.log(import.meta.resolve('@swc-node/register/esm-register'))")"
-if [ -z "$EVAL_LOADER" ]; then
-  echo "eval fail: could not resolve @swc-node/register/esm-register from $ROOT" >&2
-  exit 1
-fi
+EVAL_LOADER=""
 
 run_prs() {
   if [ -n "${PRS_CMD:-}" ]; then
     (cd "$WORK" && $PRS_CMD "$@")
   else
+    if [ -z "$EVAL_LOADER" ]; then
+      EVAL_LOADER="$(cd "$ROOT" && node --input-type=module -e \
+        "console.log(import.meta.resolve('@swc-node/register/esm-register'))")"
+    fi
+    if [ -z "$EVAL_LOADER" ]; then
+      echo "eval fail: could not resolve @swc-node/register/esm-register from $ROOT" >&2
+      exit 1
+    fi
     (cd "$WORK" && node --import "$EVAL_LOADER" "$ROOT/packages/cli/src/cli.ts" "$@")
   fi
 }
