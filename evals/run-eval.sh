@@ -3,20 +3,31 @@
 # asserts the language semantics survive compilation.
 #
 # Usage:
-#   PRS_CMD="pnpm prs" bash evals/run-eval.sh   # from-repo (CI / dev)
-#   PRS_CMD="prs" bash evals/run-eval.sh        # installed CLI
-set -euo pipefail
-
+#   bash evals/run-eval.sh                    # repo checkout (CI / dev)
+#   PRS_CMD=<bin> bash evals/run-eval.sh     # alternative single command
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PRS_CMD="${PRS_CMD:-pnpm prs}"
+
+# How to invoke the CLI. Default: the repo's own cli.ts through the swc
+# loader (works from any cwd — required, since the fixture runs in a temp
+# dir where `pnpm prs` cannot resolve a package.json). Override with a
+# single command (e.g. an installed prs binary path) via PRS_CMD.
+run_prs() {
+  if [ -n "${PRS_CMD:-}" ]; then
+    $PRS_CMD "$@"
+  else
+    node --import "$ROOT/node_modules/@swc-node/register/esm-register" \
+      "$ROOT/packages/cli/src/cli.ts" "$@"
+  fi
+}
+
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 cp -R "$ROOT/evals/fixtures/ops-center/." "$WORK/"
 cd "$WORK"
 
-$PRS_CMD validate --strict
-$PRS_CMD compile
+run_prs validate --strict
+run_prs compile
 
 # Template parameter interpolation via @inherit
 grep -q "ops-center" CLAUDE.md

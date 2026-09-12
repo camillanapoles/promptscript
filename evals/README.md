@@ -6,8 +6,8 @@ survive compilation — the layer unit tests mock away.
 ## Run
 
 ```bash
-PRS_CMD="pnpm prs" bash evals/run-eval.sh   # repo checkout (CI runs this)
-PRS_CMD="prs" bash evals/run-eval.sh        # globally installed CLI
+bash evals/run-eval.sh                    # repo checkout (CI runs this)
+PRS_CMD=<installed-prs> bash evals/run-eval.sh
 ```
 
 CI gates this eval on the `25.x` matrix leg (`ci.yml`, "Eval Fixture Compile").
