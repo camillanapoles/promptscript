@@ -6,7 +6,7 @@ survive compilation — the layer unit tests mock away.
 ## Run
 
 ```bash
-bash evals/run-eval.sh                    # repo checkout (CI runs this)
+node evals/run-eval.mjs                   # repo checkout (CI runs this)
 PRS_CMD=<installed-prs> bash evals/run-eval.sh
 ```
 

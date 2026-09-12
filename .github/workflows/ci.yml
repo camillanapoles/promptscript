@@ -93,7 +93,7 @@ jobs:
 
       - name: Eval Fixture Compile
         if: matrix.node-version == '25.x'
-        run: bash evals/run-eval.sh
+        run: node evals/run-eval.mjs
       - name: Build
         run: pnpm nx ${{ github.event_name == 'pull_request' && 'affected' || 'run-many' }} -t build
 
