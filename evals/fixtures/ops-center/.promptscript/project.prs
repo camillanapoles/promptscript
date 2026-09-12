@@ -1,0 +1,79 @@
+@meta { id: "ops-center" syntax: "1.5.0" }
+
+@inherit ./base(serviceName: "ops-center", port: 8080)
+@use ./fragment(only: ["standards", "knowledge"])
+
+@context {
+  project: "Ops Center"
+  team: "Platform"
+}
+
+@standards {
+  @header "Engineering Rules"
+  typescript: ["strict mode", "no any"]
+}
+
+@extend standards {
+  testing!: ["Use Vitest"]
+}
+
+@override standards.naming {
+  ["PascalCase components ONLY"]
+}
+
+@restrictions {
+  - "Never commit secrets"
+  - "Never bypass CI gates"
+}
+
+@shortcuts {
+  "/review": "Review code quality"
+  "/test": {
+    prompt: true
+    description: "Write unit tests"
+    content: """
+      Write Vitest unit tests following the AAA pattern.
+    """
+  }
+}
+
+@skills {
+  @use ./md-skill.md as vue-review
+  deploy: {
+    description: "Deploy the service"
+    content: """
+      1. Run prs validate --strict
+      2. Compile and push
+    """
+  }
+}
+
+@agents {
+  reviewer: {
+    description: "Reviews code quality"
+    tools: ["Read", "Grep"]
+    content: """
+      You are a strict reviewer. Flag any-typed code and unhandled promises.
+    """
+  }
+}
+
+@examples {
+  commit: {
+    input: "Added dark mode"
+    output: "feat(settings): add dark mode"
+  }
+}
+
+@hooks {
+  greet: {
+    event: "session-start"
+    script: {
+      path: ".promptscript/scripts/greet.sh"
+      interpreter: "sh"
+    }
+    cwd: "project"
+    timeoutMs: 10000
+    targets: { github: { enabled: false } }
+  }
+}

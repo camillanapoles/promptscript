@@ -1,0 +1,19 @@
+# Template pai com parâmetros
+@meta {
+  id: "service-template"
+  syntax: "1.5.0"
+  params: {
+    serviceName: string
+    port?: number = 3000
+  }
+}
+
+@identity {
+  """
+  You are the senior engineer of {{serviceName}} running on port {{port}}.
+  """
+}
+
+@standards {
+  testing: ["Use Jest", "Use Mocha"]
+}

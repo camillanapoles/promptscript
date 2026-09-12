@@ -1,0 +1,12 @@
+id: ops-center-eval
+syntax: 1.5.0
+targets:
+  - claude
+  - github
+  - cursor
+validation:
+  rules:
+    empty-block: warning
+formatting:
+  tabWidth: 2
+  proseWrap: preserve
