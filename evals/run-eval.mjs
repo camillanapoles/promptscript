@@ -5,7 +5,15 @@
 //   node evals/run-eval.mjs                 # repo checkout (CI / dev)
 //   PRS_CMD="prs" node evals/run-eval.mjs   # alternative single command
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
