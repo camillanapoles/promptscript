@@ -97,3 +97,6 @@ docs/superpowers/
 .claude/worktrees/
 apps/vscode/*.vsix
 notebook-lm-sources/
+
+# Transient eval fixture workspace (evals/run-eval.mjs)
+.eval-run/

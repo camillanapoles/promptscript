@@ -5,13 +5,19 @@
 //   node evals/run-eval.mjs                 # repo checkout (CI / dev)
 //   PRS_CMD="prs" node evals/run-eval.mjs   # alternative single command
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const WORK = mkdtempSync(join(tmpdir(), 'prs-eval-'));
+// The fixture must live INSIDE the repo tree: project discovery anchors on
+// the process cwd and rejects paths outside the project root, while the bare
+// swc loader specifier resolves by walking up from the cwd to the repo's
+// node_modules. A transient directory one level below the repo root
+// satisfies both.
+const WORK = join(ROOT, '.eval-run');
+rmSync(WORK, { recursive: true, force: true });
+mkdirSync(WORK);
 
 const failures = [];
 function check(label, condition) {
@@ -24,12 +30,10 @@ try {
   const prsCmd = process.env.PRS_CMD;
 
   function runPrs(args) {
-    // Default path mirrors the repo's own package.json scripts (e.g.
-    // docs:validate): bare loader specifier with the repo as cwd — the exact
-    // combination CI already runs green. The fixture reaches the CLI through
-    // absolute paths (validate positional files) and --cwd (compile); the
-    // installed-CLI override runs with the fixture as cwd, where project
-    // discovery needs no flags.
+    // Both paths run with the transient in-repo fixture dir as cwd: project
+    // discovery finds the fixture config, and the bare swc loader specifier
+    // (default path) resolves by walking up to the repo's node_modules — the
+    // same resolution the repo's own package.json scripts rely on.
     const result = prsCmd
       ? spawnSync(prsCmd, args, { cwd: WORK, shell: true, stdio: 'inherit' })
       : spawnSync(
@@ -40,7 +44,7 @@ try {
             join(ROOT, 'packages/cli/src/cli.ts'),
             ...args,
           ],
-          { cwd: ROOT, stdio: 'inherit' }
+          { cwd: WORK, stdio: 'inherit' }
         );
     if (result.error) throw result.error;
     if (result.status !== 0) {
@@ -48,8 +52,8 @@ try {
     }
   }
 
-  runPrs(['validate', '--strict', join(WORK, '.promptscript/project.prs')]);
-  runPrs(['compile', '--cwd', WORK]);
+  runPrs(['validate', '--strict']);
+  runPrs(['compile']);
 
   const read = (file) => readFileSync(join(WORK, file), 'utf-8');
   const claude = read('CLAUDE.md');
