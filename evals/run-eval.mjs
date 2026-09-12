@@ -18,6 +18,15 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const WORK = join(ROOT, '.eval-run');
 rmSync(WORK, { recursive: true, force: true });
 mkdirSync(WORK);
+// The swc loader discovers tsconfig.json from the process cwd; without the
+// repo's path mappings the CLI's TypeScript sources cannot resolve their
+// imports. Extending the base config keeps the mappings anchored to the
+// repo root (relative paths in an extended config resolve against the
+// config that declares them).
+writeFileSync(
+  join(WORK, 'tsconfig.json'),
+  JSON.stringify({ extends: '../tsconfig.base.json' }, null, 2) + '\n'
+);
 
 const failures = [];
 function check(label, condition) {
